@@ -1,18 +1,23 @@
 ﻿using System;
 using UnityEngine;
 using UnityEngine.UI;
+using Photon.Pun;
+using Photon.Realtime;
+using System.IO;
 
-public class FireButtonHandler : MonoBehaviour
+public class FireButtonHandler : MonoBehaviourPunCallbacks
 {
     public InputField InputRichting;
     public InputField InputHoek;
     public GameObject Map;
-    public GameObject Impact;
+    //public GameObject Impact;
 
     double deviationX;
     double deviationY;
 
     public GameObject[] buildings;
+    public GameObject targets;
+    private bool readyToFire;
 
     private void applyDamageToBuildings(Vector3 vector)//Geeft hier de berkende Vector3 uit FireButton mee als parameter;
     {
@@ -21,29 +26,27 @@ public class FireButtonHandler : MonoBehaviour
 
         foreach(GameObject g in buildings)
         {
+            Buildings buildingScript = g.GetComponent<Buildings>();
             if (Vector3.Distance(vector, g.transform.position) <= 10)
             {
-                Renderer rend = g.GetComponent<Renderer>();
-                Debug.Log("Hij komt in rood");
-                rend.material.SetColor("_Color", Color.red);
+                buildingScript.DoDamage(0);
             }
 
             if (Vector3.Distance(vector, g.transform.position) <= 15 && Vector3.Distance(vector, g.transform.position) >= 10)
             {
                 Renderer rend = g.GetComponent<Renderer>();
-                Debug.Log("Hij komt in oranje");
                 if(rend.material.GetColor("_Color") != Color.red){
-                    rend.material.SetColor("_Color", color);
+                    buildingScript.DoDamage(1);
                 }
-            }
 
+            }
             if (Vector3.Distance(vector, g.transform.position) <= 20 && Vector3.Distance(vector, g.transform.position) >= 15)
             {
                 Renderer rend = g.GetComponent<Renderer>();
-                Debug.Log("Hij komt in geel");
                 if(rend.material.GetColor("_Color") != Color.red && rend.material.GetColor("_Color") != color){
-                    rend.material.SetColor("_Color", Color.yellow);
-                }
+                    buildingScript.DoDamage(2);
+                }  
+ 
             }
         }
     }
@@ -52,21 +55,41 @@ public class FireButtonHandler : MonoBehaviour
     {
         Screen.SetResolution(1920, 1080, true);
         buildings = GameObject.FindGameObjectsWithTag("Building");
+        targets = GameObject.FindGameObjectWithTag("Target");
 
         foreach(GameObject g in buildings)
         {
-            g.SetActive(false);
+            //g.SetActive(false);
+            g.GetComponent<MeshRenderer>().enabled = false;
         }
+
+        targets.GetComponent<MeshRenderer>().enabled = false;
         System.Random random = new System.Random();
         deviationX = random.NextDouble() * 10 + 5;
         deviationY = random.NextDouble() * 10 + 5;
     }
 
-    public void FireTest()
+    float timer;
+    public int waitingTime = 3;
+
+    public void Update(){
+        if(!readyToFire) {
+            timer += Time.deltaTime;
+            if(timer > waitingTime){
+                readyToFire = true;
+                timer = 0;
+            }
+        }
+    }
+
+    public void FireButton()
     {
-        Vector3 vector = calculateVector();
-        Instantiate(Impact, vector, Quaternion.identity);
-        applyDamageToBuildings(vector);
+        if(readyToFire){
+            Vector3 vector = calculateVector();
+            PhotonNetwork.Instantiate(Path.Combine("PhotonPrefabs", "Impact"), vector, Quaternion.identity);
+            applyDamageToBuildings(vector);
+            readyToFire = false;
+        }
     }
 
     private double CalculateDistance()

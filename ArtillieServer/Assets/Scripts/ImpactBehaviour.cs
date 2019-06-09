@@ -10,35 +10,28 @@ public class ImpactBehaviour : MonoBehaviour
     void Start()
     {
         controller = GameObject.Find("SceneController").GetComponent<SceneController>();
-        if(controller.role == 0)
-            this.gameObject.GetComponent<SpriteRenderer>().sortingOrder = -1;   
-        else 
-            this.gameObject.GetComponent<SpriteRenderer>().sortingOrder = 1;
+        impactVisibility();
 
         Object.Destroy(gameObject, 10.0f);
-    }
-
-    public void SetImpact(int val){
-         this.gameObject.GetComponent<SpriteRenderer>().sortingOrder = val; 
     }
 
     // Update is called once per frame
     void Update()
     {
+        impactVisibility();
+    }
+
+    private void impactVisibility(){
         if(controller.role == 0)
-        {
             this.gameObject.GetComponent<SpriteRenderer>().sortingOrder = -1;   
-        }
         else 
             this.gameObject.GetComponent<SpriteRenderer>().sortingOrder = 1;
     }
 
     void OnTriggerEnter(Collider collision){
         GameObject bridge = GameObject.FindGameObjectWithTag("Target");
+        Debug.Log("Target hit!");
         Renderer rend = bridge.GetComponent<Renderer>();
         rend.material.SetColor("_Color", Color.red);
-        
-
-
     }
 }

@@ -6,6 +6,7 @@ using UnityEngine.UI;
 
 public class SceneController : MonoBehaviour
 {
+    public static SceneController sceneController;
     public GameObject schutterPanel;
     public GameObject spotterPanel;
 
@@ -23,15 +24,31 @@ public class SceneController : MonoBehaviour
     private Boolean firstLoad;
 
     void Start(){
+        if(SceneController.sceneController == null){
+            SceneController.sceneController = this;
+        } else
+        {
+            if(SceneController.sceneController != this)
+            {
+                Destroy(SceneController.sceneController.gameObject);
+                SceneController.sceneController= this;
+            }
+        }
+        DontDestroyOnLoad(this.gameObject);
+
+        // Set variables
         firstLoad = true;
         role = (int)Role.SCHUTTER;
+        fireButtonHandler = this.GetComponent<FireButtonHandler>();
+
+        //Enable the right views
         activateSchutterPanel();
         firstPersonCamera.enabled = false;
         switchViewButton.gameObject.SetActive(false);
         ShowMapView();
 
-        fireButtonHandler = this.GetComponent<FireButtonHandler>();
     }
+
     public void OnClickSwitchRole(){
         role = role == (int)Role.SCHUTTER ? (int)Role.SPOTTER : (int)Role.SCHUTTER;
         
@@ -53,10 +70,6 @@ public class SceneController : MonoBehaviour
         schutterPanel.SetActive(true);
     }
 
-    void Update(){
-    
-    }
-
     public void OnClickSwitchView(){
         if(firstPersonCamera.enabled == true)
             ShowMapView();
@@ -67,8 +80,10 @@ public class SceneController : MonoBehaviour
     private void ShowMapView() {
         firstPersonCamera.enabled = false;
         switchViewButton.gameObject.SetActive(false);
-        if(!firstLoad)
+        if(!firstLoad) {
             setBuildings(false);
+            fireButtonHandler.targets.SetActive(false);
+        }
         else {
             firstLoad = false;
         }
@@ -78,12 +93,14 @@ public class SceneController : MonoBehaviour
         firstPersonCamera.enabled = true;
         switchViewButton.gameObject.SetActive(true);
         setBuildings(true);
+        fireButtonHandler.targets.SetActive(true);
     }
 
     private void setBuildings(bool active){
         foreach(GameObject g in fireButtonHandler.buildings)
         {
-            g.SetActive(active);
+            //g.SetActive(active);
+            g.GetComponent<MeshRenderer>().enabled = active;
         }
     }
 }
